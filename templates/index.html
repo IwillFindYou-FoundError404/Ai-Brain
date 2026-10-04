@@ -1,188 +1,79 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Brain - Chat & Vision</title>
+    <meta charset="UTF-8"><title>Astra Brain Runtime</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #11141a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 700px; background: #1c212c; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; flex-direction: column; height: 85vh; }
-        .header { padding: 15px; border-bottom: 1px solid #2d3748; text-align: center; color: #4db5ff; font-weight: bold; font-size: 18px; }
-        
-        /* Khung hiển thị nội dung chat */
+        body { font-family: system-ui, sans-serif; background: #0f1115; color: #e2e8f0; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .chat-container { width: 100%; max-width: 650px; background: #161920; border-radius: 12px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .chat-box { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .msg { padding: 10px 14px; border-radius: 8px; max-width: 80%; word-wrap: break-word; font-size: 15px; line-height: 1.5; }
-        .msg.user { background: #007bff; color: white; align-self: flex-end; }
-        .msg.ai { background: #2d3748; color: #e2e8f0; align-self: flex-start; }
-        
-        /* Các thành phần đa phương tiện sinh ra ngay trong chat */
-        .media-container { margin-top: 8px; background: #000; padding: 5px; border-radius: 6px; border: 1px solid #4a5568; display: inline-block; }
-        canvas { display: block; image-rendering: pixelated; background: #000; }
-        .stream-meta { font-size: 11px; color: #a0aec0; font-family: monospace; margin-top: 4px; text-align: center; }
-
-        /* Khung nhập liệu ở đáy */
-        .input-area { padding: 15px; border-top: 1px solid #2d3748; display: flex; gap: 10px; }
-        input[type="text"] { flex-grow: 1; padding: 12px; background: #0d1117; border: 1px solid #2d3748; border-radius: 6px; color: white; outline: none; font-size: 14px; }
-        input[type="text"]:focus { border-color: #007bff; }
-        button { padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        button:hover { background: #0056b3; }
+        .msg { padding: 12px 16px; border-radius: 8px; max-width: 80%; font-size: 15px; line-height: 1.4; }
+        .msg.user { background: #007bff; align-self: flex-end; }
+        .msg.ai { background: #232834; align-self: flex-start; }
+        .canvas-box { display: block; margin-top: 8px; background: #000; border: 1px solid #384152; border-radius: 6px; }
+        .input-box { padding: 15px; border-top: 1px solid #232834; display: flex; gap: 10px; }
+        input { flex-grow: 1; padding: 12px; background: #0a0c10; border: 1px solid #384152; border-radius: 6px; color: #fff; }
+        button { padding: 12px 20px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="header">🧠 Mạng Nơ-ron AI Brain Tự Sinh (0 API Key)</div>
-    
-    <!-- KHUNG CHAT CHÍNH -->
-    <div class="chat-box" id="chatBox">
-        <div class="msg ai">
-            Xin chào! Tôi là AI Brain chạy hoàn toàn bằng toán học lớp ẩn phi tuyến tính. Bạn có thể ra lệnh cho tôi:<br>
-            • Nhập văn bản để tôi đoán cảm xúc.<br>
-            • Chat câu có từ <b>"ảnh"</b> để tôi tự vẽ ma trận pixel.<br>
-            • Chat câu có từ <b>"video"</b> để tôi stream trực tiếp không gian 3D tại đây.
-        </div>
+<div class="chat-container">
+    <div class="chat-box" id="box">
+        <div class="msg ai">🤖 <b>Astra Brain:</b> Sẵn sàng điều phối xử lý. Nhập câu chữ bất kỳ, hoặc chứa từ "ảnh", "video" để kiểm tra phản xạ không gian.</div>
     </div>
-    
-    <!-- KHU VỰC NHẬP LỆNH -->
-    <div class="input-area">
-        <input type="text" id="userInput" placeholder="Nhập tin nhắn chữ, yêu cầu tạo ảnh hoặc video..." onkeypress="if(event.key === 'Enter') handleInput()">
-        <button onclick="handleInput()">Gửi</button>
+    <div class="input-box">
+        <input type="text" id="inp" placeholder="Nhập tin nhắn tại đây..." onkeypress="if(event.key==='Enter') send()">
+        <button onclick="send()">Gửi</button>
     </div>
 </div>
-
 <script>
-    const chatBox = document.getElementById('chatBox');
+async function send() {
+    const inp = document.getElementById('inp'); const txt = inp.value.trim(); if(!txt) return;
+    const box = document.getElementById('box');
+    
+    const uDiv = document.createElement('div'); uDiv.className = 'msg user'; uDiv.innerText = txt; box.appendChild(uDiv);
+    inp.value = ''; box.scrollTop = box.scrollHeight;
 
-    function appendMessage(text, sender) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `msg ${sender}`;
-        msgDiv.innerHTML = text;
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
-        return msgDiv;
-    }
-
-    async function handleInput() {
-        const inputEl = document.getElementById('userInput');
-        const text = inputEl.value.trim();
-        if (!text) return;
-
-        appendMessage(text, 'user');
-        inputEl.value = '';
-
-        // Tự động phân tích nhu cầu người dùng dựa theo từ khóa
-        if (text.toLowerCase().includes('video')) {
-            // Trường hợp 1: Yêu cầu tạo Luồng Video Không Gian 3D trong chat
-            const aiMsg = appendMessage("🎬 <b>Hệ thống:</b> Đang kết nối luồng Video 3D (24 FPS) từ nơ-ron...", 'ai');
-            createVideoInChat(aiMsg);
-        } 
-        else if (text.toLowerCase().includes('ảnh') || text.toLowerCase().includes('hình')) {
-            // Trường hợp 2: Yêu cầu tạo Bức ảnh tĩnh dạng GAN Matrix trong chat
-            const aiMsg = appendMessage("🖼️ <b>Hệ thống:</b> Đang tính toán ma trận điểm ảnh...", 'ai');
-            createImageInChat(aiMsg, text);
-        } 
-        else {
-            // Trường hợp 3: Chat phân tích cảm xúc thông thường
-            try {
-                const response = await fetch('/think', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
-                });
-                const data = await response.json();
-                appendMessage(`🤖 <b>AI:</b> Tôi phân tích câu này thuộc hệ: <b>[${data.brain_decision}]</b>`, 'ai');
-            } catch (err) {
-                appendMessage('❌ Không thể kết nối lõi xử lý.', 'ai');
-            }
-        }
-    }
-
-    // HÀM SINH ẢNH NGAY TRONG TIN NHẮN CHAT
-    async function createImageInChat(targetElement, prompt) {
-        try {
-            const res = await fetch('/generate-art', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: prompt })
-            });
-            const data = await res.json();
-            
-            // Chèn màn hình Canvas nhỏ vào tin nhắn chat
-            const mediaDiv = document.createElement('div');
-            mediaDiv.className = 'media-container';
-            const canvas = document.createElement('canvas');
-            canvas.width = 40; canvas.height = 40;
-            canvas.style.width = '160px'; canvas.style.height = '160px';
-            mediaDiv.appendChild(canvas);
-            targetElement.appendChild(mediaDiv);
-            
-            const ctx = canvas.getContext('2d');
-            const matrix = data.pixel_data;
-            
-            for (let y = 0; y < matrix.length; y++) {
-                for (let x = 0; x < matrix[y].length; x++) {
-                    if (matrix[y][x] > 0) {
-                        ctx.fillStyle = `rgb(${matrix[y][x]}, ${matrix[y][x]}, ${matrix[y][x]})`;
-                        ctx.fillRect(x, y, 1, 1);
-                    }
-                }
-            }
-            targetElement.innerHTML = `🖼️ <b>AI:</b> Đã tạo xong ảnh cấu trúc He-Initialization từ text "${prompt}":`;
-            targetElement.appendChild(mediaDiv);
-        } catch (e) {
-            targetElement.innerText = "❌ Lỗi sinh ảnh.";
-        }
-    }
-
-    // HÀM TRUYỀN PHÁT VIDEO CHUYỂN ĐỘNG 24 FPS NGAY TRONG TIN NHẮN CHAT
-    function createVideoInChat(targetElement) {
-        const mediaDiv = document.createElement('div');
-        mediaDiv.className = 'media-container';
+    const res = await fetch('/agent/run', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({message: txt}) });
+    const dict = await res.json();
+    
+    const aiDiv = document.createElement('div'); aiDiv.className = 'msg ai';
+    if(dict.type === 'text') {
+        aiDiv.innerHTML = `🤖 <b>AI Decision:</b> Hệ câu này thuộc [${dict.data.decision}]`;
+        box.appendChild(aiDiv);
+    } else if(dict.type === 'image') {
+        aiDiv.innerHTML = `🖼️ <b>AI Image:</b> Đã sinh ảnh không gian tĩnh cấu trúc 3D:`;
+        drawMatrix(aiDiv, dict.data.pixel_matrix);
+        box.appendChild(aiDiv);
+    } else if(dict.type === 'video_stream') {
+        aiDiv.innerHTML = `🎬 <b>AI Video Stream:</b> Đang thu tín hiệu luồng 24 FPS...<br><span id="meta" style="font-size:11px;color:#888;"></span>`;
+        const canvas = drawMatrix(aiDiv, Array(40).fill(Array(40).fill(0)));
+        box.appendChild(aiDiv);
         
-        const canvas = document.createElement('canvas');
-        canvas.width = 40; canvas.height = 40;
-        canvas.style.width = '200px'; canvas.style.height = '200px';
-        
-        const metaDiv = document.createElement('div');
-        metaDiv.className = 'stream-meta';
-        
-        mediaDiv.appendChild(canvas);
-        mediaDiv.appendChild(metaDiv);
-        targetElement.appendChild(mediaDiv);
-        
-        const ctx = canvas.getContext('2d');
-        const eventSource = new EventSource('/stream-spatial-video');
-
-        eventSource.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            
-            if (data.end_demo) {
-                metaDiv.innerText = "⏸️ Luồng tiếp tục tính ngầm 2 tiếng...";
-                eventSource.close();
-                return;
-            }
-
-            metaDiv.innerText = `Frame: ${data.frame} | Z-Depth: ${data.camera_distance_meters}m | 24 FPS`;
-
-            const matrix = data.pixel_matrix;
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            for (let y = 0; y < matrix.length; y++) {
-                for (let x = 0; x < matrix[y].length; x++) {
-                    if (matrix[y][x] > 0) {
-                        ctx.fillStyle = `rgb(${matrix[y][x]}, ${matrix[y][x]}, ${matrix[y][x]})`;
-                        ctx.fillRect(x, y, 1, 1);
-                    }
+        const src = new EventSource('/agent/stream-video');
+        src.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if(data.end_demo) { src.close(); document.getElementById('meta').innerText = "⏸️ Luồng tiếp tục chạy ngầm định dạng 2 tiếng..."; return; }
+            document.getElementById('meta').innerText = `Khung hình: ${data.frame} | Trục Z camera: ${data.camera_z.toFixed(2)}m`;
+            const ctx = canvas.getContext('2d'); ctx.fillStyle = "#000"; ctx.fillRect(0,0,40,40);
+            for(let y=0; y<data.pixel_matrix.length; y++) {
+                for(let x=0; x<data.pixel_matrix[y].length; x++) {
+                    if(data.pixel_matrix[y][x] > 0) { ctx.fillStyle = "#fff"; ctx.fillRect(x,y,1,1); }
                 }
             }
         };
-
-        eventSource.onerror = function() {
-            metaDiv.innerText = "❌ Luồng ngắt.";
-            eventSource.close();
-        };
     }
+    box.scrollTop = box.scrollHeight;
+}
+
+function drawMatrix(el, matrix) {
+    const cv = document.createElement('canvas'); cv.className = 'canvas-box'; cv.width = 40; cv.height = 40; cv.style.width = '200px'; cv.style.height = '200px';
+    el.appendChild(cv); const ctx = cv.getContext('2d'); ctx.fillStyle = "#000"; ctx.fillRect(0,0,40,40);
+    ctx.fillStyle = "#fff";
+    for(let y=0; y<matrix.length; y++) {
+        for(let x=0; x<matrix[y].length; x++) { if(matrix[y][x]>0) ctx.fillRect(x,y,1,1); }
+    }
+    return cv;
+}
 </script>
 </body>
 </html>
