@@ -3,109 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Spatial Brain Vision</title>
+    <title>AI Brain - Chat & Vision</title>
     <style>
-        body { font-family: system-ui, sans-serif; background-color: #11141a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .dashboard { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .panel { background: #1c212c; border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-        h3 { margin-top: 0; border-bottom: 1px solid #2d3748; padding-bottom: 10px; color: #4db5ff; }
-        canvas { background: #000; display: block; margin: 15px auto; border: 2px solid #2d3748; border-radius: 8px; image-rendering: pixelated; }
-        .stats-box { background: #0d1117; font-family: monospace; padding: 12px; border-radius: 6px; font-size: 13px; color: #a2adb8; line-height: 1.6; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #11141a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 700px; background: #1c212c; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; flex-direction: column; height: 85vh; }
+        .header { padding: 15px; border-bottom: 1px solid #2d3748; text-align: center; color: #4db5ff; font-weight: bold; font-size: 18px; }
+        
+        /* Khung hiển thị nội dung chat */
+        .chat-box { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .msg { padding: 10px 14px; border-radius: 8px; max-width: 80%; word-wrap: break-word; font-size: 15px; line-height: 1.5; }
+        .msg.user { background: #007bff; color: white; align-self: flex-end; }
+        .msg.ai { background: #2d3748; color: #e2e8f0; align-self: flex-start; }
+        
+        /* Các thành phần đa phương tiện sinh ra ngay trong chat */
+        .media-container { margin-top: 8px; background: #000; padding: 5px; border-radius: 6px; border: 1px solid #4a5568; display: inline-block; }
+        canvas { display: block; image-rendering: pixelated; background: #000; }
+        .stream-meta { font-size: 11px; color: #a0aec0; font-family: monospace; margin-top: 4px; text-align: center; }
+
+        /* Khung nhập liệu ở đáy */
+        .input-area { padding: 15px; border-top: 1px solid #2d3748; display: flex; gap: 10px; }
+        input[type="text"] { flex-grow: 1; padding: 12px; background: #0d1117; border: 1px solid #2d3748; border-radius: 6px; color: white; outline: none; font-size: 14px; }
+        input[type="text"]:focus { border-color: #007bff; }
+        button { padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         button:hover { background: #0056b3; }
-        .active-glow { animation: glow 1.5s infinite alternate; }
-        @keyframes glow { from { box-shadow: 0 0 5px #007bff; } to { box-shadow: 0 0 20px #007bff; } }
     </style>
 </head>
 <body>
 
-<div class="dashboard">
-    <!-- PANEL 1: MÀN HÌNH HIỂN THỊ KIẾN THỨC KHÔNG GIAN CỦA AI -->
-    <div class="panel">
-        <h3>🎬 Màn hình Thị giác AI (Spatial Video)</h3>
-        <p style="font-size: 13px; color: #a2adb8; margin-top:0;">Bộ não đang chiếu các đỉnh lập phương 3D thành luồng ảnh 2D ở tốc độ 24 FPS:</p>
-        
-        <!-- Màn hình render ma trận pixel -->
-        <canvas id="spatialCanvas" width="40" height="40" style="width: 280px; height: 280px;"></canvas>
-        
-        <button id="btnStream" onclick="startSpatialVideo()">Kích hoạt Luồng Video Không Gian (24 FPS)</button>
+<div class="container">
+    <div class="header">🧠 Mạng Nơ-ron AI Brain Tự Sinh (0 API Key)</div>
+    
+    <!-- KHUNG CHAT CHÍNH -->
+    <div class="chat-box" id="chatBox">
+        <div class="msg ai">
+            Xin chào! Tôi là AI Brain chạy hoàn toàn bằng toán học lớp ẩn phi tuyến tính. Bạn có thể ra lệnh cho tôi:<br>
+            • Nhập văn bản để tôi đoán cảm xúc.<br>
+            • Chat câu có từ <b>"ảnh"</b> để tôi tự vẽ ma trận pixel.<br>
+            • Chat câu có từ <b>"video"</b> để tôi stream trực tiếp không gian 3D tại đây.
+        </div>
     </div>
-
-    <!-- PANEL 2: THÔNG SỐ TOÁN HỌC KHÔNG GIAN TRỰC TIẾP -->
-    <div class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-            <h3>📊 Nhật ký Phân tích Không gian</h3>
-            <p style="font-size: 13px; color: #a2adb8; margin-top:0;">Dữ liệu thời gian thực trích xuất từ các dây thần kinh thị giác toán học của AI Brain:</p>
-            <div class="stats-box" id="statsBox">
-                Hệ thống: Sẵn sàng...<br>
-                Trạng thái luồng: Đang dừng.<br>
-                Thời lượng tối đa: 2 Tiếng (7200s).<br>
-                Độ phân giải: 40x40 Ma trận Điểm ảnh.
-            </div>
-        </div>
-        <div style="font-size: 12px; color: #637381; text-align: center; margin-top: 20px;">
-            Thuật toán chạy Thuần bằng Python Numpy trên CPU Render Free.
-        </div>
+    
+    <!-- KHU VỰC NHẬP LỆNH -->
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Nhập tin nhắn chữ, yêu cầu tạo ảnh hoặc video..." onkeypress="if(event.key === 'Enter') handleInput()">
+        <button onclick="handleInput()">Gửi</button>
     </div>
 </div>
 
 <script>
-    function startSpatialVideo() {
-        const canvas = document.getElementById('spatialCanvas');
-        const ctx = canvas.getContext('2d');
-        const statsBox = document.getElementById('statsBox');
-        const btn = document.getElementById('btnStream');
-        
-        btn.disabled = true;
-        btn.innerText = "Đang truyền phát luồng (24 FPS)...";
-        canvas.classList.add('active-glow');
+    const chatBox = document.getElementById('chatBox');
 
-        // Tạo kết nối EventSource tới API stream của Render
+    function appendMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `msg ${sender}`;
+        msgDiv.innerHTML = text;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return msgDiv;
+    }
+
+    async function handleInput() {
+        const inputEl = document.getElementById('userInput');
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        appendMessage(text, 'user');
+        inputEl.value = '';
+
+        // Tự động phân tích nhu cầu người dùng dựa theo từ khóa
+        if (text.toLowerCase().includes('video')) {
+            // Trường hợp 1: Yêu cầu tạo Luồng Video Không Gian 3D trong chat
+            const aiMsg = appendMessage("🎬 <b>Hệ thống:</b> Đang kết nối luồng Video 3D (24 FPS) từ nơ-ron...", 'ai');
+            createVideoInChat(aiMsg);
+        } 
+        else if (text.toLowerCase().includes('ảnh') || text.toLowerCase().includes('hình')) {
+            // Trường hợp 2: Yêu cầu tạo Bức ảnh tĩnh dạng GAN Matrix trong chat
+            const aiMsg = appendMessage("🖼️ <b>Hệ thống:</b> Đang tính toán ma trận điểm ảnh...", 'ai');
+            createImageInChat(aiMsg, text);
+        } 
+        else {
+            // Trường hợp 3: Chat phân tích cảm xúc thông thường
+            try {
+                const response = await fetch('/think', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await response.json();
+                appendMessage(`🤖 <b>AI:</b> Tôi phân tích câu này thuộc hệ: <b>[${data.brain_decision}]</b>`, 'ai');
+            } catch (err) {
+                appendMessage('❌ Không thể kết nối lõi xử lý.', 'ai');
+            }
+        }
+    }
+
+    // HÀM SINH ẢNH NGAY TRONG TIN NHẮN CHAT
+    async function createImageInChat(targetElement, prompt) {
+        try {
+            const res = await fetch('/generate-art', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: prompt })
+            });
+            const data = await res.json();
+            
+            // Chèn màn hình Canvas nhỏ vào tin nhắn chat
+            const mediaDiv = document.createElement('div');
+            mediaDiv.className = 'media-container';
+            const canvas = document.createElement('canvas');
+            canvas.width = 40; canvas.height = 40;
+            canvas.style.width = '160px'; canvas.style.height = '160px';
+            mediaDiv.appendChild(canvas);
+            targetElement.appendChild(mediaDiv);
+            
+            const ctx = canvas.getContext('2d');
+            const matrix = data.pixel_data;
+            
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < matrix[y].length; x++) {
+                    if (matrix[y][x] > 0) {
+                        ctx.fillStyle = `rgb(${matrix[y][x]}, ${matrix[y][x]}, ${matrix[y][x]})`;
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+            targetElement.innerHTML = `🖼️ <b>AI:</b> Đã tạo xong ảnh cấu trúc He-Initialization từ text "${prompt}":`;
+            targetElement.appendChild(mediaDiv);
+        } catch (e) {
+            targetElement.innerText = "❌ Lỗi sinh ảnh.";
+        }
+    }
+
+    // HÀM TRUYỀN PHÁT VIDEO CHUYỂN ĐỘNG 24 FPS NGAY TRONG TIN NHẮN CHAT
+    function createVideoInChat(targetElement) {
+        const mediaDiv = document.createElement('div');
+        mediaDiv.className = 'media-container';
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = 40; canvas.height = 40;
+        canvas.style.width = '200px'; canvas.style.height = '200px';
+        
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'stream-meta';
+        
+        mediaDiv.appendChild(canvas);
+        mediaDiv.appendChild(metaDiv);
+        targetElement.appendChild(mediaDiv);
+        
+        const ctx = canvas.getContext('2d');
         const eventSource = new EventSource('/stream-spatial-video');
 
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
             
             if (data.end_demo) {
-                statsBox.innerHTML = `✅ <b>Kết thúc Demo 100 khung hình đầu!</b><br>Hệ thống lõi trên máy chủ Render vẫn tiếp tục duy trì thuật toán lặp sinh dữ liệu tiến trình này ngầm chuẩn 2 tiếng mà không tốn tài nguyên RAM nhờ cơ chế Generator toán học.`;
-                btn.innerText = "Chạy lại Luồng Video";
-                btn.disabled = false;
-                canvas.classList.remove('active-glow');
+                metaDiv.innerText = "⏸️ Luồng tiếp tục tính ngầm 2 tiếng...";
                 eventSource.close();
                 return;
             }
 
-            // 1. Cập nhật bảng thông số phân tích không gian
-            statsBox.innerHTML = `
-                🎬 <b>Khung hình số:</b> ${data.frame}<br>
-                ⏱️ <b>Thời gian dòng:</b> ${data.timestamp} giây<br>
-                📐 <b>Góc xoay Vật thể (X, Y):</b> [${data.rotation_angles.join('°, ')}°]<br>
-                📏 <b>Khoảng cách sâu Vật lý (Trục Z):</b> ${data.camera_distance_meters} mét<br>
-                ⚡ <b>Tốc độ bộ não:</b> 24 FPS (Thời gian thực)
-            `;
+            metaDiv.innerText = `Frame: ${data.frame} | Z-Depth: ${data.camera_distance_meters}m | 24 FPS`;
 
-            // 2. Vẽ ma trận pixel nhận từ AI lên màn hình Canvas
-            const matrix = data.pixel_data || data.pixel_matrix;
-            // Xóa màn hình cũ sang màu đen
+            const matrix = data.pixel_matrix;
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Duyệt qua ma trận số 40x40 để tô điểm sáng trắng (255)
             for (let y = 0; y < matrix.length; y++) {
                 for (let x = 0; x < matrix[y].length; x++) {
                     if (matrix[y][x] > 0) {
                         ctx.fillStyle = `rgb(${matrix[y][x]}, ${matrix[y][x]}, ${matrix[y][x]})`;
-                        ctx.fillRect(x, y, 1, 1); // Vẽ 1 pixel
+                        ctx.fillRect(x, y, 1, 1);
                     }
                 }
             }
         };
 
         eventSource.onerror = function() {
-            statsBox.innerHTML = "❌ Lỗi kết nối luồng dữ liệu không gian.";
-            btn.disabled = false;
-            btn.innerText = "Thử kết nối lại";
-            canvas.classList.remove('active-glow');
+            metaDiv.innerText = "❌ Luồng ngắt.";
             eventSource.close();
         };
     }
